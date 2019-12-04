@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Timer;
+import java.util.*;
 
 class AuctionServer {
 	
@@ -27,9 +28,8 @@ class AuctionServer {
         	if(fstream.available() > 0) {
         		ObjectInputStream in = new ObjectInputStream(fstream);
         		obj = in.readObject();
-        		//AuctionServerWork saved = (AuctionServerWork) obj; 
-        		System.out.println(obj);
-        		obj = in.readObject();
+        		LinkedList<Item> l = (LinkedList<Item>) obj;
+        		System.out.println(l.get(0));
         	}else {
         		return null;
         	}
