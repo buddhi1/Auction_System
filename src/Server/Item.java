@@ -12,19 +12,23 @@ class Item implements Serializable {
     private static int counter = 0;
     private int id;
     private AuctionBidderInterface owner;
+    private String ownerName;
     private LinkedList<Bid> bids;
     private Set<AuctionBidderInterface> observers;
     private String name;
     private final float minBid;
     private final Date startDate, closingDate;
+    private long closingTime;
     
     /* class constructor
      * 
      */
-    public Item(AuctionBidderInterface owner, String name, float minBid, long closingTime) {
+    public Item(AuctionBidderInterface owner, String OwnerName, String name, float minBid, long closingTime) {
         this.owner = owner;
+        this.ownerName = ownerName;
         this.startDate = new Date(System.currentTimeMillis());
         this.closingDate = new Date(System.currentTimeMillis() + 1000 * closingTime);
+        this.closingTime = closingTime * 1000;
         synchronized(this) {
             this.id = counter++;
         }
@@ -42,7 +46,7 @@ class Item implements Serializable {
 //        for (AuctionBidderInterface client : observers) {
     	for (AuctionBidderInterface client : observers) {
             try {
-                client.callback(message);
+                client.callback(message + "Owner: " + ownerName);
             } catch (RemoteException e) {
                 System.err.println("Unable to access client - " + e);
             }
@@ -102,6 +106,21 @@ class Item implements Serializable {
             return bids.peek();
         }
         return null;
+    }
+    
+    //returns the closing date of the bid item
+    public Date getClosingDate() {
+    	return closingDate;    	
+    }
+    
+  //returns the closing time of the bid item
+    public long getClosingTime() {
+    	return closingTime;    	
+    }
+    
+  //returns the start date of the bid item
+    public Date getStartDate() {
+    	return startDate;    	
     }
     
     //return auction item info in a string

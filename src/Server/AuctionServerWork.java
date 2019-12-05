@@ -19,6 +19,8 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
 	private static final long serialVersionUID = 1L;
 	private static LinkedList<Item> activeItemBuffer;
 	private static LinkedList<Item> closedItemBuffer;
+	private static LinkedList<Bid> bidders;
+	private static final String bfileName = "bidders.srv";
 	private transient Timer timer;
 	
 	public AuctionServerWork() throws RemoteException {
@@ -26,18 +28,140 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
 //        timer = new Timer();
         activeItemBuffer = new LinkedList<Item>();
         closedItemBuffer = new LinkedList<Item>();
+        bidders = new LinkedList<Bid>();   
+        flushBidders();
     }
-	public void reloadTimer() {
+	
+	//overload costructor for recovering the server
+	public AuctionServerWork(LinkedList<Item> la, LinkedList<Item> lc) throws RemoteException {
+        super();
 //        timer = new Timer();
-//        for (Map.Entry<LifecycleAuctionItemTask, Long> t: timerTasks.entrySet()) {
-//            // Reschedule task to initial value subtracted how much has already elapsed
-//            long timeLeft = t.getValue() - t.getKey().getTimeLeft();
-//            timer.schedule(t.getKey(), timeLeft < 0 ? 0 : timeLeft);
-//        }
+        activeItemBuffer = la;
+        closedItemBuffer = lc;
+        
+        Object obj = null;
+        
+        FileInputStream fstream;
+		try {
+			fstream = new FileInputStream(bfileName);
+			if(fstream.available() > 0) {
+	    		ObjectInputStream in = new ObjectInputStream(fstream);
+	    		obj = in.readObject();
+	    		if(obj == null) {
+	    			bidders = new LinkedList<Bid>();
+	    			flushBidders();
+	    		}
+	    		bidders = (LinkedList<Bid>) obj;
+    		}
+		} 
+		catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			bidders = new LinkedList<Bid>();
+			flushBidders();
+    	}catch (IOException e) {
+            System.err.println("Could not load file - " + e);
+            bidders = new LinkedList<Bid>();
+			flushBidders();
+        } catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			bidders = new LinkedList<Bid>();
+			flushBidders();
+		}
+    }
+	
+	//flush bidder file
+	public void flushBidders() {
+		FileOutputStream out;
+		try {
+			out = new FileOutputStream(bfileName);
+			ObjectOutputStream oos = new ObjectOutputStream(out);
+	        oos.writeObject(bidders);
+	        oos.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+		
+	//reschedule item, if closing time is not yet passed. else, move the item to closed
+	public void reloadActiveAuctionItems() {
+		for(int i=0; i <= activeItemBuffer.size(); ++i) {
+			Item item = activeItemBuffer.get(i);
+			Long remainingTime = item.getClosingTime() - System.currentTimeMillis();
+			if(remainingTime > 0) {
+				
+			}
+		}
+    }
+	
+	//sign in for bidder
+    public String signIn(String name, String pwd) throws RemoteException{
+    	Object obj = null;    	
+    	
+    	FileInputStream fstream;
+		try {
+			fstream = new FileInputStream(bfileName);
+			if(fstream.available() > 0) {
+	    		ObjectInputStream in = new ObjectInputStream(fstream);
+	    		obj = in.readObject();
+	    		if(obj == null) {
+	    			return "error";
+	    		}
+	    		LinkedList<Bid> list = (LinkedList<Bid>) obj;
+	    		
+	    		for(Bid bid: list) {
+	    			if(name.contentEquals(bid.getOwnerName())) {
+	    				//encrypt the password
+	    				//pwd = 
+	    				if(pwd.contentEquals(bid.getPwd())) {
+	    					return "true";
+	    				}
+	    			}
+	    					
+	    		}
+	    		return "false";
+    		}
+		} 
+		catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+    	}catch (IOException e) {
+            System.err.println("Could not load file - " + e);
+        } catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+    	return "error";
+    }
+    
+  //sign up for bidder
+    public String signUp(AuctionBidderInterface owner,String name, String pwd) throws RemoteException{
+    	Bid bidder = new Bid(owner, name, pwd);
+    	bidder.changeStatus();
+    	bidders.add(bidder);
+    	FileOutputStream out;
+		try {
+			out = new FileOutputStream(bfileName);
+			ObjectOutputStream oos = new ObjectOutputStream(out);
+	        oos.writeObject(bidders);
+	        oos.close();
+	        return "true";
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        
+    	return "error";
     }
 	
 	//create an auction item
-	public String createAuctionItem(AuctionBidderInterface owner, String name, float minVal, long closingTime) throws RemoteException {
+	public String createAuctionItem(AuctionBidderInterface owner, String ownerName, String name, float minVal, long closingTime) throws RemoteException {
 		String msg="";
 		Boolean flag=false;
 		//validation
@@ -63,7 +187,7 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
         }
         //create item if it passes the validations 
         if(!flag) {
-        	Item item = new Item(owner, name, minVal, closingTime);   
+        	Item item = new Item(owner, ownerName, name, minVal, closingTime);   
         	AuctionItemBuffer buffer = new AuctionItemBuffer(activeItemBuffer, closedItemBuffer);
         	buffer.addItem(item); 
         	timer = new Timer();
@@ -96,7 +220,7 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
 	        Item item = activeItemBuffer.get(index);
 	        if (item == null) 
 	        	return "Invalid auction item";
-	        if (item.getOwner() == owner) 
+	        if (item.getOwner().getName().equals(ownerName))
 	        	return "This item is owned by you";	        
 	        //construct bid object	        
 	        Bid b = new Bid(owner, amount, ownerName);
@@ -139,6 +263,11 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
   //returns the closed bid list
     public LinkedList<Item> getClosedItemBuffer(){
     	return closedItemBuffer;
+    }
+    
+  //returns the bibber list
+    public LinkedList<Bid> getBidders(){
+    	return bidders;
     }
     
     //testing function

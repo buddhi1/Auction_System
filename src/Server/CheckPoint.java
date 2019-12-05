@@ -19,7 +19,7 @@ class CheckPoint extends TimerTask{
         try {
             FileOutputStream out = new FileOutputStream(fileName);
             ObjectOutputStream oos = new ObjectOutputStream(out);
-            System.out.println(auction);
+            oos.writeObject(auction.getActiveItemBuffer());
             oos.writeObject(auction.getClosedItemBuffer());
             oos.close();
             System.out.println("Successfully checkpoint " + fileName);

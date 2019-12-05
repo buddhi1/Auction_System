@@ -43,7 +43,7 @@ class AuctionItemBuffer extends TimerTask implements Serializable{
             	closedItemBuffer.add(item);
                  
                 // Notify observers
-            	String msg = "Auction for item " + item.getName() + " ended";
+            	String msg = "Auction for item " + item.getName();
 //                StringBuilder m = new StringBuilder("Auction for item " + item.getName() + " ended");
             	Bid maxBid = item.getMaxBidIndex();
                 if (maxBid != null) {

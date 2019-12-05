@@ -20,16 +20,26 @@ class AuctionServer {
     	port = p;
     }
     
+        
     //recover server from last checkpoint
     public static AuctionServerWork loadState(String fileName) {
         Object obj = null;
+        AuctionServerWork server = null;
         try {
         	FileInputStream fstream= new FileInputStream(fileName);
         	if(fstream.available() > 0) {
         		ObjectInputStream in = new ObjectInputStream(fstream);
         		obj = in.readObject();
-        		LinkedList<Item> l = (LinkedList<Item>) obj;
-        		System.out.println(l.get(0));
+        		if(obj == null) {
+        			return server;
+        		}
+        		LinkedList<Item> la = (LinkedList<Item>) obj;
+        		obj = in.readObject();
+        		if(obj == null) {
+        			return server;
+        		}
+        		LinkedList<Item> lc = (LinkedList<Item>) obj;
+        		server = new AuctionServerWork(la, lc);
         	}else {
         		return null;
         	}
@@ -38,10 +48,7 @@ class AuctionServer {
         } catch (ClassNotFoundException e) {
             System.err.println("Could not find class - " + e);
         }
-        if (obj instanceof AuctionServerWork) {
-            ((AuctionServerWork) obj).reloadTimer();
-        }
-        return (AuctionServerWork) obj;
+        return server;
     }
     
     public static void displayInfo() {
@@ -80,12 +87,13 @@ class AuctionServer {
 		            if(auction != null) {
 		            	rtn = false;
 		            	System.out.println("Recovering is successful!");		            	
-		            	System.out.println(((AuctionServerWork)auction));
+		            	System.out.println(auction.getActiveItemBuffer().get(0).getOwner().getName()==null);
 		            	break;		            	
 		            } else {
 		            	System.out.println("Recovery is not possible. Starting a new copy...");
 		            }	
 		        case "n":
+		        	
 		            auction = new AuctionServerWork();
 		            rtn = false;
 		            break;
@@ -109,9 +117,9 @@ class AuctionServer {
             server.bindServer();
             System.out.println("Server started...");
             //check-pointing           
-//            Timer timer = new Timer();
-//            CheckPoint chk = new CheckPoint(auction, filename);
-//            timer.schedule(chk, delay*1000, delay*1000); 
+            Timer timer = new Timer();
+            CheckPoint chk = new CheckPoint(auction, filename);
+            timer.schedule(chk, delay*1000, delay*1000); 
                         
             /* make server state auto save
              * 

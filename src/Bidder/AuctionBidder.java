@@ -9,16 +9,40 @@ class AuctionBidder {
 	public static void main(String[] args) {
         String host = "localhost";
         int port = 1099;
+        String input="";
+        String response = "";
+        String ownerName = "";
 
         String connectionStr = "rmi://"+host+":"+port+"/auction";
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));       
 
         try {
             ConnectServer connection = new ConnectServer(connectionStr);
-            
-            System.out.print("What is your username? ");
-            String ownerName = br.readLine();
             AuctionBidderWork client = new AuctionBidderWork(ownerName);
+            
+            System.out.println("*** Welcome to the Auction System ***");
+            do {
+	            System.out.println("Choose option");
+	            System.out.println("i - Sign in");
+	            System.out.println("u - Sign up");
+	            input = br.readLine().toLowerCase();
+            }while(!(input.equals("i") || input.equals("u")));
+                    
+            
+            do {
+            	System.out.print("Username: ");
+                ownerName = br.readLine();
+                System.out.print("Password: ");
+                String pwd = br.readLine();
+	            if(input.equals("i")) {
+	            	response = connection.getServer().signIn(ownerName, pwd);
+	            }else {
+	            	response = connection.getServer().signUp(client, ownerName, pwd);
+	            }
+	            System.out.println("Login " + response);
+            }while(!"true".equals(response));
+            
+            
             System.out.println("Choose an option");
             System.out.println("l - List items");
             System.out.println("a - Add Item");
@@ -28,7 +52,7 @@ class AuctionBidder {
 
             boolean end = false;
             while (!end) {
-                String response = "";
+                response = "";
                 try {
                     switch (br.readLine().toLowerCase()) {
                         case "l":
@@ -43,7 +67,7 @@ class AuctionBidder {
                                 float startPrice = Float.valueOf(br.readLine());
                                 System.out.print("End auction in x seconds: ");
                                 long endTime = Long.valueOf(br.readLine());
-                                response = connection.getServer().createAuctionItem(client, name, startPrice, endTime);
+                                response = connection.getServer().createAuctionItem(client, client.getName(), name, startPrice, endTime);
                             } catch (NumberFormatException nfe) {
                                 System.err.println("Incorrect input format. Please try again.");
                             }

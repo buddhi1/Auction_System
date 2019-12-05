@@ -17,7 +17,7 @@ public interface AuctionServerInterface extends Remote {
      * return success/error message
      * 
      */
-    String createAuctionItem(AuctionBidderInterface owner, String name, float minVal, long closingTime) throws RemoteException;
+    String createAuctionItem(AuctionBidderInterface owner, String ownerName, String name, float minVal, long closingTime) throws RemoteException;
 
     /**
      * Make a bid
@@ -43,7 +43,10 @@ public interface AuctionServerInterface extends Remote {
      */
     String getClosedAuctions() throws RemoteException;
     
-  //returns the active bid list
-//    public LinkedList<Item> getActiveItemBuffer();
+    //sign in for bidder
+    String signIn(String name, String pwd) throws RemoteException;
+    
+  //sign up for bidder
+    String signUp(AuctionBidderInterface owner, String name, String pwd) throws RemoteException;
 
 }
