@@ -36,8 +36,11 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
 	public AuctionServerWork(LinkedList<Item> la, LinkedList<Item> lc) throws RemoteException {
         super();
 //        timer = new Timer();
-        activeItemBuffer = la;
         closedItemBuffer = lc;
+        
+        //call reloader 
+        activeItemBuffer = la;
+        
         
         Object obj = null;
         
@@ -46,12 +49,13 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
 			fstream = new FileInputStream(bfileName);
 			if(fstream.available() > 0) {
 	    		ObjectInputStream in = new ObjectInputStream(fstream);
-	    		obj = in.readObject();
+	    		obj = in.readObject();	    		
 	    		if(obj == null) {
 	    			bidders = new LinkedList<Bid>();
 	    			flushBidders();
+	    		} else {
+	    			bidders = (LinkedList<Bid>) obj;
 	    		}
-	    		bidders = (LinkedList<Bid>) obj;
     		}
 		} 
 		catch (FileNotFoundException e) {
@@ -67,6 +71,12 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			bidders = new LinkedList<Bid>();
+			flushBidders();
+		}
+		
+		if(bidders.size() > 0) {
+			reloadActiveAuctionItems();
+		} else {
 			flushBidders();
 		}
     }
@@ -86,15 +96,52 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
 			e.printStackTrace();
 		}
 	}
+	
+	//returns bidder from the bidders
+	public AuctionBidderInterface getBidder(String name) {
+		String n="";
+		System.out.println("server work: bidders*****: " + bidders.size());
+		for(int i=0; i < bidders.size(); ++i) {
+			n = bidders.get(i).getOwnerName();
+			System.out.println("server work: bidders**: " + n);
+			if(n.equals(name)) {
+				return bidders.get(i).getOwner(); 
+			}
+		}
+		return null;
+	}
+	
+	//transfer problamatic bids to closed
+	public void closeBid(int i) { 
+		Item item;
+		if ((item = activeItemBuffer.remove(i)) != null) {
+            // Move auction to closed buffer
+        	closedItemBuffer.add(item);
+		}
+	}
 		
 	//reschedule item, if closing time is not yet passed. else, move the item to closed
 	public void reloadActiveAuctionItems() {
+		AuctionBidderInterface temp;
+		System.out.println("server work: bidders: " + bidders.toString());
+		
 		for(int i=0; i <= activeItemBuffer.size(); ++i) {
 			Item item = activeItemBuffer.get(i);
-			Long remainingTime = item.getClosingTime() - System.currentTimeMillis();
+			Long remainingTime = item.getClosingDate().getTime() - System.currentTimeMillis();
+			System.out.println("server work: owner nae: " + item.getOwnerName());
 			if(remainingTime > 0) {
-				
-			}
+				temp = getBidder(item.getOwnerName());
+				System.out.println("server work: owner: " + temp);
+				if(temp != null) {
+					activeItemBuffer.get(i).setOwner(temp, item.getOwnerName());
+					//check observers					
+					//check bidders list
+				} else {
+					closeBid(i);
+				}				
+			} else {
+				closeBid(i);
+			}			
 		}
     }
 	
@@ -206,17 +253,18 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
     	
     	if (owner == null) {
     		msg = "Owner is null";
-    	} else {       
+    	} else {    
+    		if(auctionItemId >= activeItemBuffer.size() || auctionItemId < 0) {
+	        	return "Invalid auction item";
+	        }
 	        // Validate item exists and doesn't belong to the bidder
     		for(int i=0; i < activeItemBuffer.size() && flag; i++) {
         		if(activeItemBuffer.get(i).getId() == auctionItemId) {
         			index = i;
         			flag = false;
         		}
-        	}
-//	        if(auctionItemId >= activeItemBuffer.size()) {
-//	        	return "Invalid auction item";
-//	        }
+        	} 		
+	        
 	        Item item = activeItemBuffer.get(index);
 	        if (item == null) 
 	        	return "Invalid auction item";

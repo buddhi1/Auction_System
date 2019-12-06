@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat;
 class Item implements Serializable {
 	private static final long serialVersionUID = 1L;
     private static int counter = 0;
-    private int id;
+    private final int id;
     private AuctionBidderInterface owner;
     private String ownerName;
     private LinkedList<Bid> bids;
@@ -18,17 +18,15 @@ class Item implements Serializable {
     private String name;
     private final float minBid;
     private final Date startDate, closingDate;
-    private long closingTime;
     
     /* class constructor
      * 
      */
-    public Item(AuctionBidderInterface owner, String OwnerName, String name, float minBid, long closingTime) {
+    public Item(AuctionBidderInterface owner, String ownerName, String name, float minBid, long closingTime) {
         this.owner = owner;
         this.ownerName = ownerName;
         this.startDate = new Date(System.currentTimeMillis());
         this.closingDate = new Date(System.currentTimeMillis() + 1000 * closingTime);
-        this.closingTime = closingTime * 1000;
         synchronized(this) {
             this.id = counter++;
         }
@@ -46,7 +44,7 @@ class Item implements Serializable {
 //        for (AuctionBidderInterface client : observers) {
     	for (AuctionBidderInterface client : observers) {
             try {
-                client.callback(message + "Owner: " + ownerName);
+                client.callback(message + " [Item Owner: " + ownerName + "]");
             } catch (RemoteException e) {
                 System.err.println("Unable to access client - " + e);
             }
@@ -84,6 +82,11 @@ class Item implements Serializable {
     	return owner;
     }
     
+    //returns owner name
+    public String getOwnerName() {
+    	return ownerName;
+    }
+    
     //returns the max bid index
     public Bid getMaxBidIndex() {
     	if(bids.size() <= 0) {
@@ -112,17 +115,12 @@ class Item implements Serializable {
     public Date getClosingDate() {
     	return closingDate;    	
     }
-    
-  //returns the closing time of the bid item
-    public long getClosingTime() {
-    	return closingTime;    	
-    }
-    
+       
   //returns the start date of the bid item
     public Date getStartDate() {
     	return startDate;    	
     }
-    
+     
     //return auction item info in a string
     public String toString() { // complete method from the begining 
     	synchronized(this) {
@@ -158,4 +156,12 @@ class Item implements Serializable {
             return result.append("\n").toString();
         }
     }
+    
+    //set owner
+    public void setOwner(AuctionBidderInterface owner, String name) {
+    	this.owner = owner;
+    	ownerName = name;
+    }
+    
+    //check connected 
 }

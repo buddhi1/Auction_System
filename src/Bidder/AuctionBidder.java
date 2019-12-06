@@ -12,13 +12,13 @@ class AuctionBidder {
         String input="";
         String response = "";
         String ownerName = "";
+        AuctionBidderWork client;
 
         String connectionStr = "rmi://"+host+":"+port+"/auction";
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));       
 
         try {
-            ConnectServer connection = new ConnectServer(connectionStr);
-            AuctionBidderWork client = new AuctionBidderWork(ownerName);
+            ConnectServer connection = new ConnectServer(connectionStr);            
             
             System.out.println("*** Welcome to the Auction System ***");
             do {
@@ -34,6 +34,7 @@ class AuctionBidder {
                 ownerName = br.readLine();
                 System.out.print("Password: ");
                 String pwd = br.readLine();
+                client = new AuctionBidderWork(ownerName);
 	            if(input.equals("i")) {
 	            	response = connection.getServer().signIn(ownerName, pwd);
 	            }else {
@@ -49,7 +50,7 @@ class AuctionBidder {
             System.out.println("b - Make a Bid");
             System.out.println("h - History");
             System.out.println("q - Quit");
-
+            
             boolean end = false;
             while (!end) {
                 response = "";

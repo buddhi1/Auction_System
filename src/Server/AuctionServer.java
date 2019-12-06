@@ -86,8 +86,7 @@ class AuctionServer {
 		            auction = loadState(fileName);
 		            if(auction != null) {
 		            	rtn = false;
-		            	System.out.println("Recovering is successful!");		            	
-		            	System.out.println(auction.getActiveItemBuffer().get(0).getOwner().getName()==null);
+		            	System.out.println("Recovering is successful!");
 		            	break;		            	
 		            } else {
 		            	System.out.println("Recovery is not possible. Starting a new copy...");
