@@ -75,7 +75,7 @@ class AuctionServerWork extends UnicastRemoteObject implements AuctionServerInte
 		}
 		
 		if(bidders.size() > 0) {
-			reloadActiveAuctionItems();
+			//reloadActiveAuctionItems();
 		} else {
 			flushBidders();
 		}
